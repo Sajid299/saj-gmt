@@ -1,0 +1,33 @@
+//@version=5
+indicator("ATR-based Dynamic Supply and Demand Zones", overlay=true)
+
+// User-defined input for lookback period
+lookback = input(100, title="Lookback Period")
+
+// Calculate ATR
+atr = ta.atr(14)
+
+// Calculate the dynamic supply and demand zones
+highestHigh = ta.highest(high, lookback)
+lowestLow = ta.lowest(low, lookback)
+
+// Zone strength scoring
+supplyZoneStrength = math.max(0, (ta.valuewhen(high == highestHigh, high, 0) - close) / atr)
+demandZoneStrength = math.max(0, (close - ta.valuewhen(low == lowestLow, low, 0)) / atr)
+
+// Logic to plot zones and their strength
+plotshape(series=supplyZoneStrength > 0, location=location.absolute, color=color.red, style=shape.labelup, text='Supply
+Strength: ' + str.tostring(supplyZoneStrength, format.mintick))
+plotshape(series=demandZoneStrength > 0, location=location.absolute, color=color.green, style=shape.labeldown, text='Demand
+Strength: ' + str.tostring(demandZoneStrength, format.mintick))
+
+// Dashboard panel showing active zones
+var label dashboardLabel = na
+if (supplyZoneStrength > 0 or demandZoneStrength > 0)
+    var str = "Active Zones:\n"
+    if supplyZoneStrength > 0
+        str := str + "Supply Zone at: " + str.tostring(highestHigh) + " with Strength: " + str.tostring(supplyZoneStrength) + "\n"
+    if demandZoneStrength > 0
+        str := str + "Demand Zone at: " + str.tostring(lowestLow) + " with Strength: " + str.tostring(demandZoneStrength) + "\n"
+    label.delete(dashboardLabel)
+    dashboardLabel := label.new(bar_index, high, str, xloc=xloc.bar_index, style=label.style_label_down, color=color.blue)
